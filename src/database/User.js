@@ -1,6 +1,7 @@
 const mongoose = require("mongoose") ;  
 const validator = require("validator") ; 
-const   UserSchema = mongoose.Schema({
+const jwt = require("jsonwebtoken") ; 
+const   userSchema = mongoose.Schema({
     firstName: {
         type: String , 
         required: true , 
@@ -9,7 +10,7 @@ const   UserSchema = mongoose.Schema({
                 if(v.length < 3){
                     throw new Error("First name must be at least 3 characters long") ;
                 }
-                const regex = /^[A-Za-z]{1,50} / ; 
+                const regex = /^[A-Za-z]{1,50}$/; 
                 if(! regex.test(v)){
                     throw new Error("First name must contain only letters") ;
                 }
@@ -23,7 +24,8 @@ const   UserSchema = mongoose.Schema({
                 if(v.length < 3){
                     throw new Error("Last name must be at least 3 characters long!") ;
                 }
-                const regex = /^[A-Za-z]{1,50} / ; 
+                const regex = /^[A-Za-z]{1,50}$/; 
+
                 if(! regex.test(v)){
                     throw new Error("Last name must contain only letters!") ;
                 }
@@ -46,11 +48,30 @@ const   UserSchema = mongoose.Schema({
         required: true , 
         validate: {
             validator: function(v){
-                if(! validator.isStrongPassword(v))
-                    throw new Error("Please Enter Strong Password!") ; 
+                if(! validator.isStrongPassword(v)){
+                    // console.log("password is not strong") ;
+                    throw new Error("Please Enter Strong Password!") ;
+                } 
             }
         }
-    } 
+    } , 
+    phoneNumber: {
+        type: String , 
+        unique: true ,
+        required: false ,
+        validate: {
+            validator: function(v){
+                if(!v) return true ; 
+                if (v && !validator.isMobilePhone(v)){
+                    throw new Error("Please Enter Valid Phone Number!") ;
+                }
+            }
+        } 
+    }
 }) ; 
 
-module.exports = mongoose.model("User" , UserSchema) ; 
+
+
+userSchema.index({ phoneNumber: 1 }, { unique: true, partialFilterExpression: { phoneNumber: { $exists: true, $ne: "" } } });
+
+module.exports = mongoose.model("User" , userSchema) ; 
