@@ -4,6 +4,11 @@ const connectDB = require("./database/connection") ;
 const cookieParser = require("cookie-parser") ;
 require('dotenv').config({ path: './src/.env' });
 const authRouter = require("./routes/auth") ; 
+const cors = require("cors") ; 
+app.use(cors({
+    origin: "http://localhost:3000" , 
+    credentials: true
+})) ; 
 app.use(cookieParser()) ; 
 app.use(express.json()) ; 
 app.use("/" , authRouter) ; 
