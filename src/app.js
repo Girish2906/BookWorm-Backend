@@ -2,13 +2,16 @@ const express = require("express") ;
 const app = express() ; 
 const connectDB = require("./database/connection") ; 
 const cookieParser = require("cookie-parser") ;
+const multer = require("multer") ; 
 require('dotenv').config({ path: './src/.env' });
 const authRouter = require("./routes/auth") ; 
 const cors = require("cors") ; 
+const upload = multer({ dest: 'uploads/' })
 app.use(cors({
     origin: "http://localhost:3000" , 
     credentials: true
 })) ; 
+app.use(express.urlencoded({ extended: false })) ;
 app.use(cookieParser()) ; 
 app.use(express.json()) ; 
 app.use("/" , authRouter) ; 

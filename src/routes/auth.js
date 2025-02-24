@@ -6,14 +6,33 @@ const {validateUserData} = require("../utilityFunctions/validateData") ;
 const {validateLoginData} = require("../utilityFunctions/validateData") ;
 const userAuth = require("../middlewares/userAuth") ; 
 const jwt = require("jsonwebtoken") ; 
-authRouter.post("/register" , async (req , res) => {
+const multer = require("multer") ; 
+
+const storage = multer.diskStorage({
+    destination: (req , file , cb) => {
+        cb(null , 'uploads/')
+    } , 
+    filename: (req , file , cb) => {
+        const suffix = Date.now() ; 
+        // console.log(17 , "$!$@") ; 
+        cb(null , suffix, '-' , file.filename) ; 
+    }
+}) ;  
+
+const upload = multer({storage}) ; 
+
+authRouter.post("/register" , upload.single('photo') , async (req , res) => {
     // res.status(200).json({isSuccess: true , data "User Registered"}) ; 
     try{
         const answer = validateUserData(req.body) ;
         // console.log("this is the answer",answer) ;  
-        const {firstName , lastName , email , password, phoneNumber} = req.body ; 
+        const {firstName , lastName , email , password, phoneNumber } = req.body ; 
+        console.log("re.file @~!#@!", req?.file?.path , req?.file , req?.file?.buffer) ; 
+        // const photo = req?.file ? req.file.path : null ; 
+        // console.log("this is the photo: ",photo) ; 
         const passwordHash = await bcrypt.hash(password , 10) ; 
-        const user = new User({firstName , lastName , email , password: passwordHash , phoneNumber}) ;
+        // const user = new User({firstName , lastName , email , password: passwordHash , phoneNumber , photo }) ; 
+        const user = new User({firstName , lastName , email , password: passwordHash , phoneNumber }) ; 
         const userSaved = await user.save() ;
         // res.send(req.body) ; 
         res.status(201).json({isSuccess: true , data: userSaved}) ; 
@@ -57,7 +76,7 @@ authRouter.get("/profile" , userAuth , async (req , res) => {
     }
 }) ; 
 
-authRouter.post("/logou1t" , async (req , res) => {
+authRouter.post("/logout" , async (req , res) => {
     try{
         const token = jwt.sign(null , {
             expiresIn: new Date(Date.now())
@@ -72,7 +91,9 @@ authRouter.post('/logout' , async (req , res) => {
     res.cookie("token" , null , {
         expires: new Date(Date.now()) 
     }) ; 
-    res.send("Logged out successfully!") ; 
+    res.status(200).json({isSuccess: true , message: "User Logged Out"}) ; 
+    
+    // res.send("Logged out successfully!") ; 
 }) ; 
 
 module.exports = authRouter ; 
