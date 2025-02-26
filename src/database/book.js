@@ -29,6 +29,16 @@ const Book = mongoose.Schema({
         required: true , 
         default: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5eNVTV_qLbt6LOsZepDWaVWqE6bh-yZp0Cw&s" , 
     } , 
+    pages: {
+        type: Number , 
+        required: true , 
+        validator: {
+            validate: (v) => {
+                if(v > 5000)
+                    throw new Error("Please Enter Valid Number of Pages") ; 
+            }
+        }
+    },
     genre: {
         type: [String] , 
         required: true , 
@@ -40,4 +50,6 @@ const Book = mongoose.Schema({
             }
         }
     }
-}) ; 
+}, {timestamps: true}) ; 
+
+module.exports = mongoose.model("Book" , Book) ; 
