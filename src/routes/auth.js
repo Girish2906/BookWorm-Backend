@@ -26,14 +26,14 @@ const upload = multer({storage}) ;
 authRouter.post("/register" , upload.single('photo') , async (req , res) => {
     // res.status(200).json({isSuccess: true , data "User Registered"}) ; 
     try{
-        console.log("this is the request: ",req) ; 
+        // console.log("this is the request: ",req) ; 
         const answer = validateUserData(req.body) ;
         // console.log("this is the answer",answer) ;  
         const {firstName , lastName , email , password, phoneNumber } = req.body ; 
         // console.log("re.file @~!#@!", req?.file?.path , req?.file , req?.file?.buffer) ; 
         const photoPath = req?.file?.path; 
         const photoBase64 = req.file ? req.file.buffer.toString('base64') : null ; 
-        console.log("1341" , photoBase64);
+        // console.log("1341" , photoBase64);
         
         // const photo = req?.file ? req.file.path : null ; 
         // console.log("this is the photo: ",photo) ; 

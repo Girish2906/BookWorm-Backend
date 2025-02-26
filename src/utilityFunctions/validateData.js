@@ -26,6 +26,14 @@ const validateLoginData = (body) => {
         throw new Error("Password is required") ; 
     }
     return true ; 
-}
+} ; 
 
-module.exports = {validateUserData , validateLoginData} ; 
+const validateBookUploadData = (body) => {
+    const {name , author , pages , genre} = body.body ; 
+    console.log(name , author, genre , pages) ; 
+    if(!name || !author || !pages || !genre.length  ){
+        throw new Error("All fields are mandatory") ; 
+    }
+} ; 
+
+module.exports = {validateUserData , validateLoginData , validateBookUploadData } ; 
