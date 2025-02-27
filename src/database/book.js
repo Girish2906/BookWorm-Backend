@@ -49,7 +49,19 @@ const Book = mongoose.Schema({
                 }
             }
         }
-    }
+    },
+    email: {
+        type: String , 
+        required: true , 
+        unique: true , 
+        ref: "User" ,  
+        validate: {
+            validator: function(v){
+                if(! validator.isEmail(v))
+                    throw new Error("Email is not valid!") ; 
+            }
+        }
+    } , 
 }, {timestamps: true}) ; 
 
 module.exports = mongoose.model("Book" , Book) ; 
