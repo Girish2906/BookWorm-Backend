@@ -9,7 +9,7 @@ const bookRouter = require("./routes/book") ;
 const cors = require("cors") ; 
 const upload = multer({ dest: 'uploads/' })
 app.use(cors({
-    origin: "http://localhost:3000" , 
+    origin: "http://localhost:5173" , 
     credentials: true
 })) ; 
 app.use(express.urlencoded({ extended: false })) ;

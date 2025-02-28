@@ -83,24 +83,13 @@ authRouter.get("/profile" , userAuth , async (req , res) => {
     }
 }) ; 
 
-authRouter.post("/logout" , async (req , res) => {
-    try{
-        const token = jwt.sign(null , {
-            expiresIn: new Date(Date.now())
-        }) ; 
-        res.cookie("token" , token) ; 
-        return res.status(200).json({isSuccess: true , message: "User Logged out"}) ; 
-    } catch(error){
-        return res.status(400).json({isSuccess: false , message: error.message}) ; 
-    }
-}) ; 
+
+
 authRouter.post('/logout' , async (req , res) => {
     res.cookie("token" , null , {
         expires: new Date(Date.now()) 
     }) ; 
     res.status(200).json({isSuccess: true , message: "User Logged Out"}) ; 
-    
-    // res.send("Logged out successfully!") ; 
 }) ; 
 
 module.exports = authRouter ; 
