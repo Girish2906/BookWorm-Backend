@@ -86,10 +86,12 @@ authRouter.get("/profile" , userAuth , async (req , res) => {
 
 
 authRouter.post('/logout' , async (req , res) => {
+    console.log("These are the cookies: ",req?.cookies) ; 
     res.cookie("token" , null , {
         expires: new Date(Date.now()) 
     }) ; 
-    res.status(200).json({isSuccess: true , message: "User Logged Out"}) ; 
+    return res.status(200).json({isSuccess: true , message: "User Logged Out"}) ; 
 }) ; 
+
 
 module.exports = authRouter ; 

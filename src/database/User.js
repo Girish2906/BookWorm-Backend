@@ -70,13 +70,6 @@ const   userSchema = mongoose.Schema({
     } , 
     photo: {
         type: String , 
-        // validate: {
-        //     validator: function(v){
-        //         if(v && !validator.isURL(v)){
-        //             throw new Error("Please Enter Valid URL!") ; 
-        //         }
-        //     }
-        // }
     }
 } , {timestamps: true}) ; 
 

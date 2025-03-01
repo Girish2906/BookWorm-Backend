@@ -2,6 +2,7 @@ const express = require("express") ;
 const mongoose = require("mongoose") ; 
 const validator = require("validator") ; 
 const bookRouter = express.Router() ; 
+const User = require("./User") ; 
 
 const Book = mongoose.Schema({
     name: {
@@ -24,11 +25,6 @@ const Book = mongoose.Schema({
             }
         }
     } , 
-    image: {
-        type: String , 
-        required: true , 
-        default: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5eNVTV_qLbt6LOsZepDWaVWqE6bh-yZp0Cw&s" , 
-    } , 
     pages: {
         type: Number , 
         required: true , 
@@ -50,17 +46,15 @@ const Book = mongoose.Schema({
             }
         }
     },
-    email: {
+   uploadedById: {
+    type: mongoose.Schema.Types.ObjectId , 
+    required: true , 
+    ref: "User"
+   } , 
+   image: {
         type: String , 
         required: true , 
-        unique: true , 
-        ref: "User" ,  
-        validate: {
-            validator: function(v){
-                if(! validator.isEmail(v))
-                    throw new Error("Email is not valid!") ; 
-            }
-        }
+        default: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5eNVTV_qLbt6LOsZepDWaVWqE6bh-yZp0Cw&s" , 
     } , 
 }, {timestamps: true}) ; 
 
