@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt") ;
 const User = require("../database/User") ; 
 const {validateUserData} = require("../utilities/validateData") ;
 const {validateLoginData} = require("../utilities/validateData") ;
-const userAuth = require("../middlewares/userAuth") ; 
+const {userAuth} = require("../middlewares/userAuth") ; 
 const jwt = require("jsonwebtoken") ; 
 const multer = require("multer") ; 
 

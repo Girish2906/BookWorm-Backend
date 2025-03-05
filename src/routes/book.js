@@ -1,6 +1,6 @@
 const express = require("express") ; 
 const bookRouter = express.Router() ; 
-const userAuth = require("../middlewares/userAuth") ; 
+const {userAuth , userAuthBooks} = require("../middlewares/userAuth") ; 
 const multer = require("multer") ; 
 const Book = require("../database/book") ; 
 const {validateBookUploadData} = require("../utilities/validateData") ; 
@@ -14,16 +14,16 @@ bookRouter.post("/upload/Book" , userAuth , upload.single("image") , async (req 
     try{
         console.log(13 , "upload/book")
         validateBookUploadData(req) ; 
-        const {name , author , pages , genre} = req.body ; 
+        const {name , author , pages , genre , price} = req.body ; 
         const uploadedById = req.user._id ; 
         const image = req?.file ; 
         const base64BookImage = image ? image.buffer.toString('base64') : null ; 
-        const newBook = new Book( {name , author , pages , genre , uploadedById , image: base64BookImage} ) ; 
+        const newBook = new Book( {name , author , pages , genre , uploadedById , image: base64BookImage , price} ) ; 
         const userGenre = genre.split(", ") ;
         if(! userGenre.every(genre => allowedGenres.includes(genre) ) ){
             throw new Error("Genre Not Allowed") ; 
         }
-        const response = await newBook.save()
+        const response = await newBook.save() ; 
         return res.status(200).json({isSuccess: true , data: response }) ; 
 
     } catch(Error){
@@ -42,17 +42,22 @@ bookRouter.get("/book/genres" , userAuth , async (req , res) => {
     }
 }) ; 
 
-bookRouter.get("/getAllBooks" , userAuth , async (req , res) => {
+bookRouter.get("/book/getAllBooks", userAuthBooks , async (req , res) => {
     try{
-        // const books = await Book.find({}).populate("uploadedById" , "firstName lastName photo") ; 
-        // const books = await Book.find({}).populate("uploadedById" , "firstName lastName photo").select('-_id') ;
-        // const books = await Book.find({}).select('-_id').populate("uploadedById" , "firstName lastName photo").select('-_id') ; 
-        // const books = await Book.find({}).populate({ path: "uploadedById", select: "firstName lastName photo -_id" }).select('-_id');  
-        // const books = await Book.find({}).select('name author pages genre -_id').populate('uploadedById').select('firstName lastName -_id') ; 
-        // const books = await Book.find({}).populate('uploadedById').select('firstName lastName -_id') ; 
-        const books = await Book.find({}) ; 
+        console.log("passed the authenticaion somehow")
+        console.log(47 , req.user) ; 
+        let books = [] ; 
+        if( ! req.user){
+            books = await Book.find({}).select("-image").populate("uploadedById" , "firstName lastName") ; 
+        } else{
+            const _id= req.user._id ; 
+            // books = await Book.find({ $nor: [{_id}] }) ; 
+        books = await Book.find({uploadedById: {$ne: _id }}).select("-image").populate("uploadedById" , "firstName lastName") ;
+        }
+        // console.log(books)
         return res.status(200).json({isSuccess: true , data: books}) ; 
     } catch(Error){
+        console.log()
         return res.status(400).json({isSuccess: false , data: Error.message}) ; 
     }
 }) ; 

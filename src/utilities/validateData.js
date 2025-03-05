@@ -29,9 +29,8 @@ const validateLoginData = (body) => {
 } ; 
 
 const validateBookUploadData = (body) => {
-    const {name , author , pages , genre} = body.body ; 
-    console.log(name , author, genre , pages) ; 
-    if(!name || !author || !pages || !genre.length  ){
+    const {name , author , pages , genre , price} = body.body ; 
+    if(!name || !author || !pages || !genre.length  || !price ){
         throw new Error("All fields are mandatory") ; 
     }
 } ; 

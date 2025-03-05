@@ -51,6 +51,17 @@ const Book = mongoose.Schema({
     required: true , 
     ref: "User"
    } , 
+   price: {
+    type: Number , 
+    required: true , 
+    validate: {
+        validator: (price) => {
+            if(price && (price < 50 || price > 3000 ) ){
+                throw new Error("Please Enter A Reasonable Price") ; 
+            }
+        }
+    }
+   },
    image: {
         type: String , 
         required: true , 
