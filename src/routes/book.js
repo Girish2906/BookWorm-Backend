@@ -44,17 +44,19 @@ bookRouter.get("/book/genres" , userAuth , async (req , res) => {
 
 bookRouter.get("/book/getAllBooks", userAuthBooks , async (req , res) => {
     try{
-        console.log("passed the authenticaion somehow")
-        console.log(47 , req.user) ; 
+        // console.log("passed the authenticaion somehow")
+        // console.log(47 , req.user) ; 
         let books = [] ; 
         if( ! req.user){
             books = await Book.find({}).select("-image").populate("uploadedById" , "firstName lastName") ; 
         } else{
             const _id= req.user._id ; 
-            // books = await Book.find({ $nor: [{_id}] }) ; 
-        books = await Book.find({uploadedById: {$ne: _id }}).select("-image").populate("uploadedById" , "firstName lastName") ;
+            //query to get all books except the ones uploaded by the user
+        books = await Book.find({uploadedById: {$ne: _id }}).populate("uploadedById" , "firstName lastName").select("-image") ; 
+
+        //query to get all autobiographies
+        // books = await Book.find({genre: "Autobiography" ,  pages: {$gt: 500}}).populate("uploadedById").select("-image") ; 
         }
-        // console.log(books)
         return res.status(200).json({isSuccess: true , data: books}) ; 
     } catch(Error){
         console.log()
