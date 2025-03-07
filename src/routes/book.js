@@ -48,11 +48,11 @@ bookRouter.get("/book/getAllBooks", userAuthBooks , async (req , res) => {
         // console.log(47 , req.user) ; 
         let books = [] ; 
         if( ! req.user){
-            books = await Book.find({}).select("-image").populate("uploadedById" , "firstName lastName") ; 
+            books = await Book.find({}).populate("uploadedById" , "firstName lastName") ; 
         } else{
             const _id= req.user._id ; 
             //query to get all books except the ones uploaded by the user
-        books = await Book.find({uploadedById: {$ne: _id }}).populate("uploadedById" , "firstName lastName").select("-image") ; 
+        books = await Book.find({uploadedById: {$ne: _id }}).populate("uploadedById" , "firstName lastName")
 
         //query to get all autobiographies
         // books = await Book.find({genre: "Autobiography" ,  pages: {$gt: 500}}).populate("uploadedById").select("-image") ; 
