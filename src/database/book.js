@@ -4,7 +4,7 @@ const validator = require("validator") ;
 const bookRouter = express.Router() ; 
 const User = require("./User") ; 
 
-const Book = mongoose.Schema({
+const Book = new mongoose.Schema({
     name: {
         type: String , 
         required: true , 

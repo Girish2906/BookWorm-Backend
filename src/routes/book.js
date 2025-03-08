@@ -45,9 +45,10 @@ bookRouter.get("/book/genres" , userAuth , async (req , res) => {
 bookRouter.get("/book/getAllBooks", userAuthBooks , async (req , res) => {
     try{
         // console.log("passed the authenticaion somehow")
-        // console.log(47 , req.user) ; 
+        console.log(47 , req.user) ; 
         let books = [] ; 
         if( ! req.user){
+            console.log("is it going here") ; 
             books = await Book.find({}).populate("uploadedById" , "firstName lastName") ; 
         } else{
             const _id= req.user._id ; 
