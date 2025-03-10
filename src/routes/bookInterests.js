@@ -34,7 +34,7 @@ bookInterestRouter.post("/bookInterest/:status/:bookId" , userAuth , async (req 
         ) ; 
         if(validBookInterest.length > 0) throw new Error("You have already shown interest in this book") ; 
         const newBookInterest = new BookInterest({
-            bookId , status , interestedById: req.user._id , message: message
+            bookId , status , interestedById: req.user._id , initialMessage: message
         }) ; 
         const data = await newBookInterest.save() ; 
         return res.status(200).json({isSuccess: true , data}) ; 
@@ -43,7 +43,7 @@ bookInterestRouter.post("/bookInterest/:status/:bookId" , userAuth , async (req 
     }
 } ) ; 
 
-bookInterestRouter.get("/bookInterest/find" , userAuth , async (req , res) => {
+bookInterestRouter.post("/bookInterest/find" , userAuth , async (req , res) => {
     try{
         const {bookId , interestedById} = req.body ; 
         if(!bookId || !interestedById){

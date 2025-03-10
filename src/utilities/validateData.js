@@ -35,4 +35,9 @@ const validateBookUploadData = (body) => {
     }
 } ; 
 
+const validateBookEditData = (body) => {
+    const allowedUpdates = Object.keys(body) ; 
+    
+}
+
 module.exports = {validateUserData , validateLoginData , validateBookUploadData } ; 
