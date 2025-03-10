@@ -48,10 +48,12 @@ bookRouter.get("/book/genres" , userAuth ,  async (req , res) => {
 
 bookRouter.put("/book/edit" , userAuth , upload.single("image") ,  async (req , res) => {
     try{
-        console.log("book edit API"); 
         const bookId = req.body.bookId ; 
-        console.log(req.body) ; 
-        const book = await Book.findOne({_id: bookId}) ; 
+        const book = await Book.findOne({_id: bookId}) ;  
+        console.log(book.uploadedById , req.user._id) ; 
+        if(!book.uploadedById.equals(req.user._id)){
+            throw new Error("Can't edit books uploaded by others") ; 
+        }
         const image = req?.file ; 
         const base64BookImage = image? image.buffer.toString('base64') : null ; 
         if(!book)
@@ -59,8 +61,6 @@ bookRouter.put("/book/edit" , userAuth , upload.single("image") ,  async (req , 
         else{
             book.set(req.body) ; 
             book.image = base64BookImage ; 
-            console.log(book) ; 
-            console.log(req.files) ; 
             const updatedBook = await book.save() ; 
             return res.status(200).json({isSuccess: true , data: updatedBook}) ; 
 
