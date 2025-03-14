@@ -94,4 +94,15 @@ bookRouter.get("/book/getAllBooks", userAuthBooks , async (req , res) => {
     }
 }) ; 
 
+bookRouter.get("/book/booksByMe" , userAuth , async (req , res) => {
+    try{
+        const _id = req.user._id ; 
+        const booksByMe = await Book.find({uploadedById: _id}) ; 
+        console.log(booksByMe) ; 
+        return res.status(200).json({isSuccess: true, data: booksByMe}) ; 
+    } catch(Error){
+        return res.status("404").json({isSuccess: false , data: Error.message}) ; 
+    }
+}) ; 
+
 module.exports = bookRouter ; 
