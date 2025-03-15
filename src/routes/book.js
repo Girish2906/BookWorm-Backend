@@ -105,4 +105,5 @@ bookRouter.get("/book/booksByMe" , userAuth , async (req , res) => {
     }
 }) ; 
 
+// beginning redis journey
 module.exports = bookRouter ; 
