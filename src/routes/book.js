@@ -106,4 +106,5 @@ bookRouter.get("/book/booksByMe" , userAuth , async (req , res) => {
 }) ; 
 
 // beginning redis journey
+// doing some setup => WSL, docker, redis
 module.exports = bookRouter ; 
