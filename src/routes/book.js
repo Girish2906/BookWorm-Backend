@@ -5,6 +5,22 @@ const multer = require("multer") ;
 const Book = require("../database/book") ; 
 const {validateBookUploadData} = require("../utilities/validateData") ; 
 const {allowedGenres} = require("../utilities/constants") ; 
+const {S3Client} = require("@aws-sdk/client-s3") ; 
+const {PutObjectCommand} = require("@aws-sdk/client-s3") ; 
+
+const accessKey = process.env.AWS_ACCESS_KEY ; 
+const awsSecretKey = process.env.AWS_SECRET_KEY ; 
+const bucketName = process.env.BUCKET_NAME ; 
+const  bucketLocation = process.env.BUCKET_LOCATION ; 
+
+const s3 = new S3Client({
+    credentials: {
+        accessKeyId: accessKey , 
+        secretAccessKey: awsSecretKey
+    } , 
+    region: bucketLocation
+})
+
 const Redis = require("ioredis") ; 
 const redis = new Redis({
     host: "127.0.0.1",
@@ -21,17 +37,64 @@ const storage = multer.memoryStorage() ;
 
 const upload = multer({storage}) ; 
 
-bookRouter.post("/upload/Book" , userAuth , upload.single("image") , async (req , res) => {
+bookRouter.post("/upload/BookS3" , userAuth , upload.single("image") , async (req , res) => {
     try{
-        console.log(13 , "upload/book")
+        // console.log(13 , "upload/book")
         validateBookUploadData(req) ; 
         const {name , author , pages , genre , price} = req.body ; 
+        console.log(req.file) ; 
+        const params = {
+            Bucket: bucketName , 
+            Key: req.file.originalname , 
+            Body: req.file.buffer , 
+            ContentType: req.file.mimetype , 
+        }
+        console.log("these are the params" , params) ; 
+        const command = new PutObjectCommand(params) ; 
+        const responseS3ImageSaving = await s3.send(command) ;
+         console.log("response of S3 image saving",responseS3ImageSaving) ; 
         const uploadedById = req.user._id ; 
         const image = req?.file ; 
-        console.log(image);
+        // console.log(image);
         
         const base64BookImage = image ? image.buffer.toString('base64') : null ;  
-        console.log(base64BookImage);
+        // console.log(base64BookImage);
+        
+        const newBook = new Book( {name , author , pages , genre , uploadedById , image :  base64BookImage, price} ) ; 
+        const userGenre = genre.split(", ") ;
+        if(! userGenre.every(genre => allowedGenres.includes(genre) ) ){
+            throw new Error("Genre Not Allowed") ; 
+        }
+        const response = await newBook.save() ; 
+        return res.status(200).json({isSuccess: true , data: response }) ; 
+
+    } catch(Error){
+        return res.status(400).json({isSuccess: false , data: Error.message}) ; 
+    }
+}) ; 
+
+bookRouter.post("/upload/BookBuffer" , userAuth , upload.single("image") , async (req , res) => {
+    try{
+        // console.log(13 , "upload/book")
+        validateBookUploadData(req) ; 
+        const {name , author , pages , genre , price} = req.body ; 
+        console.log(req.file) ; 
+        const params = {
+            Bucket: bucketName , 
+            Key: req.file.originalname , 
+            Body: req.file.buffer , 
+            ContentType: req.file.mimetype , 
+        }
+        console.log("these are the params" , params) ; 
+        const command = new PutObjectCommand(params) ; 
+        const responseS3ImageSaving = await s3.send(command) ;
+         console.log("response of S3 image saving",responseS3ImageSaving) ; 
+        const uploadedById = req.user._id ; 
+        const image = req?.file ; 
+        // console.log(image);
+        
+        const base64BookImage = image ? image.buffer.toString('base64') : null ;  
+        // console.log(base64BookImage);
         
         const newBook = new Book( {name , author , pages , genre , uploadedById , image :  base64BookImage, price} ) ; 
         const userGenre = genre.split(", ") ;
@@ -89,19 +152,32 @@ bookRouter.get("/book/getAllBooks", userAuthBooks , async (req , res) => {
         let books = [] ; 
         if( ! req.user){
             console.log("is it going here") ; 
-            books = await Book.find({}).populate("uploadedById" , "firstName lastName") ; 
+            const cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
+            console.log(cachedBooks) ; 
+            // console.log(cachedBooks) ; 
+            if(!cachedBooks){
+                console.log("if condition")
+                books = await Book.find({}).populate("uploadedById" , "firstName lastName")
+                await redis.set("listOfBooks", JSON.stringify(books));
+            }
+            else {
+                console.log("else condition")
+                books = cachedBooks ; 
+            }
             console.log("redis cache hit") ; 
         } else{
             const _id= req.user._id ;
             const info = await redis.info() ;  
             console.log("cache hit" ) ; 
             // const result = await redis.get("")
-            await redis.set("test19March642", "Hello ioredis! I am able to see the values added in the redis server") 
+            // await redis.set("test19March642", "Hello ioredis! I am able to see the values added in the redis server") 
             // .then((result) => console.log("Redis says:", result))
             // .catch(console.error);
             //query to get all books except the ones uploaded by the user
-        books = await Book.find({uploadedById: {$ne: _id }}).populate("uploadedById" , "firstName lastName") 
-
+            // working query
+            books = await Book.find({uploadedById: {$ne: _id }}).populate("uploadedById" , "firstName lastName") ; 
+            // await redis.set("listOfBooks" , books) ; 
+            await redis.set("listOfBooks", JSON.stringify(books));
         //query to get all autobiographies
         // books = await Book.find({genre: "Autobiography" ,  pages: {$gt: 500}}).populate("uploadedById").select("-image") ; 
         }
