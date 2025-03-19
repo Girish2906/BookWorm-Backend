@@ -5,6 +5,17 @@ const multer = require("multer") ;
 const Book = require("../database/book") ; 
 const {validateBookUploadData} = require("../utilities/validateData") ; 
 const {allowedGenres} = require("../utilities/constants") ; 
+const Redis = require("ioredis") ; 
+const redis = new Redis({
+    host: "127.0.0.1",
+    port: 6379,
+    // password: "Iloveme@100", 
+    // db: 0 
+  });
+// const redis = new Redis({
+//     host: "localhost" , 
+//     port: 6379
+// })
 
 const storage = multer.memoryStorage() ; 
 
@@ -74,15 +85,22 @@ bookRouter.put("/book/edit" , userAuth , upload.single("image") ,  async (req , 
 bookRouter.get("/book/getAllBooks", userAuthBooks , async (req , res) => {
     try{
         // console.log("passed the authenticaion somehow")
-        console.log(47 , req.user) ; 
+        // console.log(47 , req.user) ; 
         let books = [] ; 
         if( ! req.user){
             console.log("is it going here") ; 
             books = await Book.find({}).populate("uploadedById" , "firstName lastName") ; 
+            console.log("redis cache hit") ; 
         } else{
-            const _id= req.user._id ; 
+            const _id= req.user._id ;
+            const info = await redis.info() ;  
+            console.log("cache hit" ) ; 
+            // const result = await redis.get("")
+            await redis.set("test19March642", "Hello ioredis! I am able to see the values added in the redis server") 
+            // .then((result) => console.log("Redis says:", result))
+            // .catch(console.error);
             //query to get all books except the ones uploaded by the user
-        books = await Book.find({uploadedById: {$ne: _id }}).populate("uploadedById" , "firstName lastName")
+        books = await Book.find({uploadedById: {$ne: _id }}).populate("uploadedById" , "firstName lastName") 
 
         //query to get all autobiographies
         // books = await Book.find({genre: "Autobiography" ,  pages: {$gt: 500}}).populate("uploadedById").select("-image") ; 
