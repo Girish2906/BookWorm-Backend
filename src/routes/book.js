@@ -23,13 +23,13 @@ const s3 = new S3Client({
     region: bucketLocation
 })
 
-const Redis = require("ioredis") ; 
-const redis = new Redis({
-    host: "127.0.0.1",
-    port: 6379,
-    // password: "Iloveme@100", 
-    // db: 0 
-  });
+// const Redis = require("ioredis") ; 
+// const redis = new Redis({
+//     host: "127.0.0.1",
+//     port: 6379,
+//     // password: "Iloveme@100", 
+//     // db: 0 
+//   });
 
 const storage = multer.memoryStorage() ; 
 
@@ -158,35 +158,31 @@ bookRouter.get("/book/getAllBooks", userAuthBooks , async (req , res) => {
         // console.log(47 , req.user) ; 
         let books = [] ; 
         if( ! req.user){
-            console.log("is it going here") ; 
-            const cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
-            console.log(cachedBooks) ; 
-            // console.log(cachedBooks) ; 
-            if(!cachedBooks){
-                console.log("if condition")
+            // const cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
+            // if(!cachedBooks){
                 books = await Book.find({}).populate("uploadedById" , "firstName lastName")
-                await redis.set("listOfBooks", JSON.stringify(books));
-            }
-            else {
-                console.log("else condition")
-                books = cachedBooks ; 
-            }
-            console.log("redis cache hit") ; 
+                // await redis.set("listOfBooks", JSON.stringify(books) , "EX", 60);
+            // }
+            // else {
+            //     books = cachedBooks ; 
+            // }
         } else{
+            console.log("user is logged in, so the else condition , 171") ; 
             const _id= req.user._id ;
-            const info = await redis.info() ;  
-            console.log("cache hit" ) ; 
-            // const result = await redis.get("")
-            // await redis.set("test19March642", "Hello ioredis! I am able to see the values added in the redis server") 
-            // .then((result) => console.log("Redis says:", result))
-            // .catch(console.error);
-            //query to get all books except the ones uploaded by the user
-            // working query
-            books = await Book.find({uploadedById: {$ne: _id }}).populate("uploadedById" , "firstName lastName") ; 
-            // await redis.set("listOfBooks" , books) ; 
-            await redis.set("listOfBooks", JSON.stringify(books));
-        //query to get all autobiographies
-        // books = await Book.find({genre: "Autobiography" ,  pages: {$gt: 500}}).populate("uploadedById").select("-image") ; 
+            // let cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
+            // // console.log("redis store: ",cachedBooks) ; 
+            // if(cachedBooks){
+            //     // console.log(cachedBooks) ; 
+            //     books = cachedBooks ; 
+            // }
+            // else{
+            //     cachedBooks = [] ; 
+            //     const info = await redis.info() ;  
+                books = await Book.find({uploadedById: {$ne: _id }}).populate("uploadedById" , "firstName lastName") ; 
+                // await redis.set("listOfBooks", JSON.stringify(books));
+                // books.forEach(book => redis.hset("books", book._id, JSON.stringify(book)));
+                // console.log("books finalised" , books) ; 
+            // } 
         }
         return res.status(200).json({isSuccess: true , data: books}) ; 
     } catch(Error){
