@@ -1,7 +1,7 @@
 const express = require('express') ; 
 const bookInterestRouter = express.Router() ; 
 const {userAuth} = require("../middlewares/userAuth") ; 
-const BookInterest = require("../database/bookInterest") ; 
+const BookInterest = require("../database/BookInterest") ; 
 const User = require("../database/User") ; 
 const Book = require("../database/book") ; 
 
