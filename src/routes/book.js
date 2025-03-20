@@ -6,7 +6,9 @@ const Book = require("../database/book") ;
 const {validateBookUploadData} = require("../utilities/validateData") ; 
 const {allowedGenres} = require("../utilities/constants") ; 
 const {S3Client} = require("@aws-sdk/client-s3") ; 
-const {PutObjectCommand} = require("@aws-sdk/client-s3") ; 
+const {PutObjectCommand , GetObjectCommand} = require("@aws-sdk/client-s3") ; 
+const { v4: uuidv4 } = require('uuid');
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const accessKey = process.env.AWS_ACCESS_KEY ; 
 const awsSecretKey = process.env.AWS_SECRET_KEY ; 
@@ -28,39 +30,44 @@ const redis = new Redis({
     // password: "Iloveme@100", 
     // db: 0 
   });
-// const redis = new Redis({
-//     host: "localhost" , 
-//     port: 6379
-// })
 
 const storage = multer.memoryStorage() ; 
 
 const upload = multer({storage}) ; 
+
+async function getPresignedUrl(fileName) {
+    const command = new GetObjectCommand({
+        Bucket: "imagesbucketbookworm",
+        Key: fileName
+    });
+    return await getSignedUrl(s3, command, { expiresIn: 3600 }); // Valid for 1 hour
+}
 
 bookRouter.post("/upload/BookS3" , userAuth , upload.single("image") , async (req , res) => {
     try{
         // console.log(13 , "upload/book")
         validateBookUploadData(req) ; 
         const {name , author , pages , genre , price} = req.body ; 
-        console.log(req.file) ; 
+        const uniqueId = uuidv4(); 
+        // console.log(req.file , uniqueId) ; 
+        const finalFileName  = req.file.originalname + `|${uniqueId}` ; 
         const params = {
             Bucket: bucketName , 
-            Key: req.file.originalname , 
+            Key: finalFileName , 
             Body: req.file.buffer , 
             ContentType: req.file.mimetype , 
         }
-        console.log("these are the params" , params) ; 
-        const command = new PutObjectCommand(params) ; 
+        const command = new PutObjectCommand(params) ;
+        const imageUrl = `https://${bucketName}.s3.${bucketLocation}.amazonaws.com/${finalFileName}` ;
+        // const imageUrl = await getPresignedUrl(finalFileName) ;  
         const responseS3ImageSaving = await s3.send(command) ;
-         console.log("response of S3 image saving",responseS3ImageSaving) ; 
         const uploadedById = req.user._id ; 
-        const image = req?.file ; 
-        // console.log(image);
+        console.log("this is the image URL" , imageUrl) ; 
+        // const image = req?.file ; 
         
-        const base64BookImage = image ? image.buffer.toString('base64') : null ;  
-        // console.log(base64BookImage);
+        // const base64BookImage = image ? image.buffer.toString('base64') : null ;  
         
-        const newBook = new Book( {name , author , pages , genre , uploadedById , image :  base64BookImage, price} ) ; 
+        const newBook = new Book( {name , author , pages , genre , uploadedById , image: imageUrl, price} ) ; 
         const userGenre = genre.split(", ") ;
         if(! userGenre.every(genre => allowedGenres.includes(genre) ) ){
             throw new Error("Genre Not Allowed") ; 
@@ -78,7 +85,7 @@ bookRouter.post("/upload/BookBuffer" , userAuth , upload.single("image") , async
         // console.log(13 , "upload/book")
         validateBookUploadData(req) ; 
         const {name , author , pages , genre , price} = req.body ; 
-        console.log(req.file) ; 
+        console.log("this is the req.file: ",req.file) ; 
         const params = {
             Bucket: bucketName , 
             Key: req.file.originalname , 
