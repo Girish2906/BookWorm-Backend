@@ -17,6 +17,7 @@ bookInterestRouter.post("/bookInterest/:status/:bookId" , userAuth , async (req 
         } 
         const validBook = await Book.findOne({_id: bookId}) ; 
         if(!validBook){ throw new Error("Book Doesn't Exist") ; }
+        console.log(20 , validBook) ; 
         // validBookInterets1 and validBookInterest are the same queries, just the second one is cleaner, as mongoose by defaults apply the and operator to the different queries
         const validBookInterest1 = await BookInterest.find(
             {
@@ -27,11 +28,23 @@ bookInterestRouter.post("/bookInterest/:status/:bookId" , userAuth , async (req 
             ]
         }
         ) ; 
-        const validBookInterest = await BookInterest.find(
-                {bookId: bookId} , 
-                {interestedById: req.user._id} , 
-                {status: {$in: ["interested" , "ongoing" , "success"]}}
-        ) ; 
+        console.log(validBook.uploadedById  , req.user.id) ; 
+
+        if(validBook.uploadedById.equals (req.user._id)){
+            console.log(validBook._id  , req.user.id) ; 
+            throw new Error("Book Uploaded By Yourself!") ; 
+        }
+        // const validBookInterest = await BookInterest.find(
+        //         {bookId: bookId} , 
+        //         {interestedById: req.user._id} , 
+        //         {status: {$in: ["interested" , "ongoing" , "success"]}}
+        // ) ; 
+        const validBookInterest = await BookInterest.find({
+            bookId: bookId, 
+            interestedById: req.user._id, 
+            status: { $in: ["interested", "ongoing", "success"] }
+        });
+        
         if(validBookInterest.length > 0) throw new Error("You have already shown interest in this book") ; 
         const newBookInterest = new BookInterest({
             bookId , status , interestedById: req.user._id , initialMessage: message
@@ -60,5 +73,21 @@ bookInterestRouter.post("/bookInterest/find" , userAuth , async (req , res) => {
         return res.status(400).json({isSuccess: false , data: Error.message}) ; 
     }
 }) ; 
+
+bookInterestRouter.get('/bookInterest/getAllInterests' , userAuth , async (req , res) => {
+    try{
+        // const books = await BookInterest.find().populate("bookId").populate("uploadedById") ; 
+        const books = await BookInterest.find().populate({
+            path: "bookId",
+            populate: { path: "uploadedById" , match: { _id : req.user._id } }
+        }) ; 
+        
+
+        return res.status(200).json({isSuccess: true , data: books}) ; 
+    } catch(Error){
+        return res.status(400).json({isSuccess: false , data: Error.message}) ; 
+    }
+}) ; 
+   
 
 module.exports = bookInterestRouter ; 
