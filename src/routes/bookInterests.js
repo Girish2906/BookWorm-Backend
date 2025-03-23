@@ -77,10 +77,22 @@ bookInterestRouter.post("/bookInterest/find" , userAuth , async (req , res) => {
 bookInterestRouter.get('/bookInterest/getAllInterests' , userAuth , async (req , res) => {
     try{
         // const books = await BookInterest.find().populate("bookId").populate("uploadedById") ; 
-        const books = await BookInterest.find().populate({
+        // const books = await BookInterest.find().populate({
+        //     path: "bookId",
+        //     populate: { path: "uploadedById" , match: { _id : req.user._id } }
+        // }) ; 
+        const books = await BookInterest.find()
+    .populate([
+        {
             path: "bookId",
-            populate: { path: "uploadedById" , match: { _id : req.user._id } }
-        }) ; 
+            populate: {
+                path: "uploadedById",
+                match: { _id: req.user._id } // Filters uploadedById
+            }
+        },
+        { path: "interestedById" } // Populates interestedById separately
+    ]);
+
         
 
         return res.status(200).json({isSuccess: true , data: books}) ; 
