@@ -100,6 +100,24 @@ bookInterestRouter.get('/bookInterest/getAllInterests' , userAuth , async (req ,
         return res.status(400).json({isSuccess: false , data: Error.message}) ; 
     }
 }) ; 
+
+bookInterestRouter.get("/bookInterest/acceptedPeople" , userAuth , async (req , res) => {
+    try{
+        const acceptedRequests = await BookInterest.find({status: "accepted"})  .populate([
+            {
+                path: "bookId",
+                populate: {
+                    path: "uploadedById",
+                    match: { _id: req.user._id } // Filters uploadedById
+                }
+            },
+            { path: "interestedById" } // Populates interestedById separately
+        ]); ;  
+        return res.status(200).json({isSuccess: true , data: acceptedRequests}) ; 
+    } catch(Error){
+        return res.status(400).json({isSuccess: false , data: Error.message}) ; 
+    }
+}) ; 
    
 
 module.exports = bookInterestRouter ; 
