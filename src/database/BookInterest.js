@@ -11,6 +11,10 @@ const BookInterest = mongoose.Schema({
         required: true , 
         ref: "Book" , 
     } , 
+    uploadedById: {
+        type: mongoose.Schema.Types.ObjectId , 
+        ref: "User" , 
+    } , 
     status: {
         type: String , 
         enum: ["interested" , "ongoing" , "success" , "delete"] , 
