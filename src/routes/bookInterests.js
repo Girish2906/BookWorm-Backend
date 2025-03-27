@@ -55,20 +55,42 @@ bookInterestRouter.post("/bookInterest/:status/:bookId" , userAuth , async (req 
             interestedById: req.user._id, 
             status: { $in: ["interested", "ongoing", "success"] }
         });
-        if(  validBookInterest.length > 0 && ["interested" , "ongoing" , "success"].includes(validBookInterest.status) )throw new Error("You have already shown interest in this book") ; 
+        if(  validBookInterest.length > 0 && ["interested" , "ongoing" , "success"].includes(validBookInterest.status) )
+            throw new Error("You have already shown interest in this book") ; 
+        let data = [] ; 
       if(status !== "interested"){
 
       } else{
         const newBookInterest = new BookInterest({
             bookId , status: "interested" , interestedById: req.user._id , initialMessage: message , uploadedById
         }) ; 
-        const data = await newBookInterest.save() ; 
+        data = await newBookInterest.save() ; 
       }
         return res.status(200).json({isSuccess: true , data}) ; 
     } catch(Error){
         return res.status(400).json({isSuccess: false , data: Error.message}) ; 
     }
 } ) ; 
+
+bookInterestRouter.post("/bookInterest1/:status/:bookId" , userAuth , async (req , res) => {
+    try{
+        const allowedStatus = ["interested" , "ongoing" , "success" , "delete"] ;
+        const {status , bookId} = req.params ; 
+        const { bookInterestId , initialMessage } = req.body ; 
+        if( !status || !bookInterestId || !allowedStatus.includes(status)){
+            throw new Error("Invalid URL") ; 
+        }
+        if(status === "interested" && !bookInterestId){
+            const bookInterest = new BookInterest({
+                bookId , status: "interested" , interestedById: req.user._id , initialMessage , 
+            }) ; 
+        } if( (status === "interested" && bookInterestId) || (!bookInterestId && status ) )
+    } catch(Error){
+        return res.status(400).json({isSuccess: false , data: Error.message}) ; 
+    }
+} ) ; 
+
+
 
 bookInterestRouter.post("/bookInterest/find" , userAuth , async (req , res) => {
     try{
@@ -152,7 +174,7 @@ bookInterestRouter.get('/bookInterest/getAllInterests' , userAuth , async (req ,
 
 bookInterestRouter.get("/bookInterest/acceptedPeople" , userAuth , async (req , res) => {
     try{
-        const acceptedRequests = await BookInterest.find({status: "accepted"})  .populate([
+        const acceptedRequests = await BookInterest.find({status: "ongoing"})  .populate([
             {
                 path: "bookId",
                 populate: {
