@@ -84,7 +84,9 @@ bookInterestRouter.post("/bookInterest1/:status/:bookId" , userAuth , async (req
             const bookInterest = new BookInterest({
                 bookId , status: "interested" , interestedById: req.user._id , initialMessage , 
             }) ; 
-        } if( (status === "interested" && bookInterestId) || (!bookInterestId && status ) )
+        } if( (status === "interested" && bookInterestId) || (!bookInterestId && status !== "" ) ){
+            throw new Error("Invalid Request") ; 
+        }
     } catch(Error){
         return res.status(400).json({isSuccess: false , data: Error.message}) ; 
     }
