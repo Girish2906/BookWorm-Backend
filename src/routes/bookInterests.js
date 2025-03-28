@@ -5,6 +5,11 @@ const BookInterest = require("../database/BookInterest") ;
 const User = require("../database/User") ; 
 const Book = require("../database/book") ; 
 
+const checkUpdateValid = async (bookId , _id) => {
+    const isValidUpdate = await Book.findOne({_id: bookId , uploadedById: _id}) ; 
+    return Object.keys(isValidUpdate).length ; 
+}
+
 // this API is mainly for interested in the book from the sender side
 bookInterestRouter.post("/bookInterest/:status/:bookId" , userAuth , async (req , res) => {
     try{
@@ -77,22 +82,51 @@ bookInterestRouter.post("/bookInterest1/:status/:bookId" , userAuth , async (req
         const allowedStatus = ["interested" , "ongoing" , "success" , "delete"] ;
         const {status , bookId} = req.params ; 
         const { bookInterestId , initialMessage } = req.body ; 
-        if( !status || !bookInterestId || !allowedStatus.includes(status)){
-            throw new Error("Invalid URL") ; 
-        }
-        if(status === "interested" && !bookInterestId){
-            const bookInterest = new BookInterest({
-                bookId , status: "interested" , interestedById: req.user._id , initialMessage , 
-            }) ; 
-        } if( (status === "interested" && bookInterestId) || (!bookInterestId && status !== "" ) ){
+        console.log(bookInterestId) ; 
+        const interestedById = req.user._id ; 
+        if( !status || !bookId || !allowedStatus.includes(status) || (status !== "interested" && status !== "delete" && !bookInterestId) ){
             throw new Error("Invalid Request") ; 
+        } 
+        if( (status === "interested" && bookInterestId) || (!bookInterestId && status !== "interested" ) ){
+            throw new Error("Invalid Request") ; 
+        } else if(status === "interested"){
+            const duplicateRequest = await BookInterest.find({bookId , interestedById}) ; 
+            if(duplicateRequest.length > 0){ throw new Error("You have already shown interest in this book") }
+            const bookInterest = new BookInterest({
+                bookId , status , interestedById , initialMessage
+            }) ; 
+            const data = await bookInterest.save() ; 
+            return res.status(200).json({isSuccess: true , data}) ; 
+        }
+        else if(status === "ongoing" || status === "success"){
+            const duplicateRequest = await BookInterest.findOne({_id: bookInterestId , status }) ;
+            if(duplicateRequest) {
+                throw new Error("Duplicate Request")
+            }
+            const interestedRequest = await BookInterest.findOne({_id: bookInterestId , status: status === "ongoing" ? "interested" : "ongoing" }) ; 
+            const isUpdateValid = checkUpdateValid(interestedRequest.bookId , req.user._id) ; 
+            if(!isUpdateValid){
+                throw new Error("Inavlid Update") ; 
+            }
+            interestedRequest.status = status ; 
+            const data = await interestedRequest.save() ;   
+            return res.status(200).json({isSuccess: true , data}) ; 
+        } else if(status === "delete"){
+            const interestedRequest = await BookInterest.findOne({bookId , interestedById , status: "interested"}) ; 
+            if(!interestedRequest){
+                throw new Error("You Have Not Expressed Interest In This Book Ever") ; 
+            } 
+            const isUpdateValid = checkUpdateValid(bookId , req.user._id) ; 
+            if(!isUpdateValid){
+                throw new Error("Invalid Update 121") ; 
+            }
+            const data = await BookInterest.findOneAndDelete({_id: interestedRequest._id}) ; 
+            return res.status(200).json({isSuccess: true , data  }) ; 
         }
     } catch(Error){
         return res.status(400).json({isSuccess: false , data: Error.message}) ; 
     }
 } ) ; 
-
-
 
 bookInterestRouter.post("/bookInterest/find" , userAuth , async (req , res) => {
     try{
@@ -105,7 +139,7 @@ bookInterestRouter.post("/bookInterest/find" , userAuth , async (req , res) => {
             {bookId: bookId} , 
             {interestedById: req.user._id} , 
         ).populate("interestedById" , "firstName lastName")
-        console.log(duplicateRequest) ; 
+        console.log("duplicate ",duplicateRequest) ; 
         res.send(duplicateRequest) ; 
     } catch(Error){
         return res.status(400).json({isSuccess: false , data: Error.message}) ; 
