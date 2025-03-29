@@ -4,11 +4,12 @@ const {userAuth} = require("../middlewares/userAuth") ;
 const BookInterest = require("../database/BookInterest") ; 
 const User = require("../database/User") ; 
 const Book = require("../database/book") ; 
+const book = require('../database/book');
 
 const checkUpdateValid = async (bookId , _id) => {
     const isValidUpdate = await Book.findOne({_id: bookId , uploadedById: _id}) ; 
     return Object.keys(isValidUpdate).length ; 
-}
+} ; 
 
 // this API is mainly for interested in the book from the sender side
 bookInterestRouter.post("/bookInterest/:status/:bookId" , userAuth , async (req , res) => {
@@ -82,11 +83,15 @@ bookInterestRouter.post("/bookInterest1/:status/:bookId" , userAuth , async (req
         const allowedStatus = ["interested" , "ongoing" , "success" , "delete"] ;
         const {status , bookId} = req.params ; 
         const { bookInterestId , initialMessage } = req.body ; 
-        console.log(bookInterestId) ; 
+        // console.log(bookInterestId) ; 
         const interestedById = req.user._id ; 
         if( !status || !bookId || !allowedStatus.includes(status) || (status !== "interested" && status !== "delete" && !bookInterestId) ){
             throw new Error("Invalid Request") ; 
         } 
+        const validBook = await Book.findOne({_id: bookId}) ; 
+        if(!validBook){
+            throw new Error("Book Not Found") ; 
+        }
         if( (status === "interested" && bookInterestId) || (!bookInterestId && status !== "interested" ) ){
             throw new Error("Invalid Request") ; 
         } else if(status === "interested"){
@@ -148,34 +153,45 @@ bookInterestRouter.post("/bookInterest/find" , userAuth , async (req , res) => {
 
 bookInterestRouter.get("/bookInterest/interestsReceived" , userAuth , async (req , res) => {
     try{
-        // const requestsReceived = await BookInterest.find( {_} ) ; 
-        const bookInterests =await BookInterest.aggregate([
+       const bookInterestsReceived = await BookInterest.aggregate(
+        [
             {
-                $lookup: {
-                    from: "books", // Book collection
-                    localField: "bookId",
-                    foreignField: "_id",
-                    as: "bookDetails"
+              $lookup: {
+                from: "books" , 
+                localField: "bookId" , 
+                foreignField: "_id" , 
+                as: "bookInterestReceived"
+              }
+            },
+            {
+              $lookup: {
+                 from: "users" , 
+                localField: "interestedById" , 
+                foreignField: "_id" , 
+                as: "interestedPerson"
+              }
+              
+            },
+            {
+                $match: {
+                    "bookInterestReceived.uploadedById": req.user._id , 
+                    "status": "ongoing"
                 }
             },
-            { $unwind: "$bookDetails" }, // Convert array to object
-            {
-                $match: { "bookDetails.uploadedById": req.user._id,
-                    "status": "interested" } // Filter by uploadedById
-            },
-            {
-                $lookup: {
-                    from: "users", // User collection
-                    localField: "interestedById",
-                    foreignField: "_id",
-                    as: "interestedBy"
+           {
+              $addFields: {
+                "bookInterestReceived": {
+                  "$arrayElemAt": ["$bookInterestReceived" , 0]
+                } , 
+                "interestedPerson": {
+                   "$arrayElemAt": ["$interestedPerson" , 0]
                 }
-            },
-            { $unwind: "$interestedBy" } // Convert array to object
-        ]);
-        
-        
-    return res.status(200).json({isSuccess: true , data: bookInterests}) ; 
+              }
+            }
+          
+          ]
+    ) ; 
+    return res.status(200).json({isSuccess: true , data: bookInterestsReceived}) ; 
     } catch(Error){
         return res.status(400).json({isSuccess: false , data: Error.message }) ; 
     }
