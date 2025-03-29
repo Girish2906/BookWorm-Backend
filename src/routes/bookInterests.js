@@ -151,8 +151,9 @@ bookInterestRouter.post("/bookInterest/find" , userAuth , async (req , res) => {
     }
 }) ; 
 
-bookInterestRouter.get("/bookInterest/interestsReceived" , userAuth , async (req , res) => {
+bookInterestRouter.get("/bookInterest/interestsReceived/:status" , userAuth , async (req , res) => {
     try{
+        const {status} = req.params ; 
        const bookInterestsReceived = await BookInterest.aggregate(
         [
             {
@@ -175,7 +176,7 @@ bookInterestRouter.get("/bookInterest/interestsReceived" , userAuth , async (req
             {
                 $match: {
                     "bookInterestReceived.uploadedById": req.user._id , 
-                    "status": "ongoing"
+                    "status": status
                 }
             },
            {
