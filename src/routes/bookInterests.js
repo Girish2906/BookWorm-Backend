@@ -227,16 +227,91 @@ bookInterestRouter.get('/bookInterest/getAllInterests' , userAuth , async (req ,
 
 bookInterestRouter.get("/bookInterest/acceptedPeople" , userAuth , async (req , res) => {
     try{
-        const acceptedRequests = await BookInterest.find({status: "ongoing"})  .populate([
+        const acceptedRequests = await BookInterest.aggregate([
             {
-                path: "bookId",
-                populate: {
-                    path: "uploadedById",
-                    match: { _id: req.user._id } // Filters uploadedById
+                $match: {
+                    status : "ongoing" , 
                 }
-            },
-            { path: "interestedById" } // Populates interestedById separately
-        ]); ;  
+            } , 
+            {
+                $lookup: {
+                    from : "books" , 
+                    localField: "bookId" , 
+                    foreignField: "_id",
+                    as: "bookDocument" , 
+                }
+            } , 
+            { $unwind: "$bookDocument" },
+            {
+                $lookup: {
+                    from: "users" , 
+                    localField: "interestedById", 
+                    foreignField: "_id" , 
+                    as: "interestedPerson" , 
+                }
+            } , 
+            { $unwind: "$interestedPerson" },
+            {
+                $match: {
+                    $or: [
+                        {  "interestedPerson._id" : req.user._id } , 
+                        {  "bookDocument.uploadedById" : req.user._id}
+
+                    ]
+                }
+            }
+            // {
+            //     $match: {
+            //         $or: [
+            //             {"interestedPerson._id": req.user._id} , 
+            //             {"bookInterest.uploadedById": req.user._id} 
+            //         ]
+            //     }
+            // }
+        ]) ; 
+        // const acceptedRequests = await BookInterest.aggregate([
+        //     {
+        //         $lookup: {
+        //           from: "books" , 
+        //           localField: "bookId" , 
+        //           foreignField: "_id" , 
+        //           as: "bookInterested"
+        //         }
+        //         } , 
+        //       {
+        //         $addFields: {
+        //           bookInterested: {
+        //              $arrayElemAt: ["$bookInterested" , 0]
+        //           }
+        //         }
+        //       },
+        //       {
+        //         $match: {
+        //             $and: [
+        //                 {
+        //                     $or: [
+        //                         {"bookInterested.uploadedById": req.user._id } , 
+        //                         {interestedById: req.user._id}
+        //                       ] 
+        //                 } , 
+        //                 {
+        //                     status: "ongoing"
+        //                 }
+        //             ]
+        //         }
+        //       }
+        // ]) ; 
+        // const acceptedRequests = await BookInterest.find({status: "ongoing"})  .populate([
+        //     {
+        //         path: "bookId",
+        //         populate: {
+        //             path: "uploadedById",
+        //             match: { _id: req.user._id } 
+        //         }
+        //     },
+        //     { path: "interestedById" } 
+        // ]); ;  
+        console.log(req.user._id) ; 
         return res.status(200).json({isSuccess: true , data: acceptedRequests}) ; 
     } catch(Error){
         return res.status(400).json({isSuccess: false , data: Error.message}) ; 
