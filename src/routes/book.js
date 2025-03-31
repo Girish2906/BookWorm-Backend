@@ -23,11 +23,11 @@ const s3 = new S3Client({
     region: bucketLocation
 })
 
-// const Redis = require("ioredis") ; 
-// const redis = new Redis({
-    // host: "127.0.0.1",
-    // port: 6379, 
-//   });
+const Redis = require("ioredis") ; 
+const redis = new Redis({
+    host: "127.0.0.1",
+    port: 6379, 
+  });
 
 const storage = multer.memoryStorage() ; 
 
@@ -156,30 +156,30 @@ bookRouter.get("/book/getAllBooks", userAuthBooks , async (req , res) => {
         // console.log(47 , req.user) ; 
         let books = [] ; 
         if( ! req.user){
-            // const cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
-            // if(!cachedBooks){
+            const cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
+            if(!cachedBooks){
             //     console.log("cache not found") ; 
                 books = await Book.find({}).populate("uploadedById" , "firstName lastName")
-            //     await redis.set("listOfBooks", JSON.stringify(books) , "EX", 60);
-            // }
-            // else {
-            //     books = cachedBooks ; 
-            // }
+                await redis.set("listOfBooks", JSON.stringify(books) , "EX", 60);
+            }
+            else {
+                books = cachedBooks ; 
+            }
         } else{
             console.log("user is logged in, so the else condition , 171") ; 
             const _id= req.user._id ;
-            // let cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
-            // if(cachedBooks){
-            //     books = cachedBooks ; 
-            // }
-            // else{
-            //     cachedBooks = [] ; 
-            //     const info = await redis.info() ;  
+            let cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
+            if(cachedBooks){
+                books = cachedBooks ; 
+            }
+            else{
+                cachedBooks = [] ; 
+                const info = await redis.info() ;  
                 books = await Book.find({uploadedById: {$ne: _id }}).populate("uploadedById" , "firstName lastName") ; 
-            //     await redis.set("listOfBooks", JSON.stringify(books));
-            //     sbooks.forEach(book => redis.hset("books", book._id, JSON.stringify(book)));
-            //     console.log("books finalised" , books) ; 
-            // } 
+                await redis.set("listOfBooks", JSON.stringify(books));
+                books.forEach(book => redis.hset("books", book._id, JSON.stringify(book)));
+                console.log("books finalised" , books) ; 
+            } 
         }
         return res.status(200).json({isSuccess: true , data: books}) ; 
     } catch(Error){
