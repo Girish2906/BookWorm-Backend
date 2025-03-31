@@ -23,6 +23,6 @@ const BookInterest = mongoose.Schema({
     initialMessage: {
         type: String
     }
-} , {timeStamps: true}) ; 
+} , {timestamps: true}) ; 
 
 module.exports = mongoose.model("BookInterest" , BookInterest) ; 

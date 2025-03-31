@@ -92,13 +92,17 @@ bookInterestRouter.post("/bookInterest1/:status/:bookId" , userAuth , async (req
         if(!validBook){
             throw new Error("Book Not Found") ; 
         }
+        const uploadedById = validBook.uploadedById ;
         if( (status === "interested" && bookInterestId) || (!bookInterestId && status !== "interested" ) ){
             throw new Error("Invalid Request") ; 
         } else if(status === "interested"){
+            if(req.user._id.equals(uploadedById)){
+                throw new Error("Book Uploaded By Yourself!") ;
+            }
             const duplicateRequest = await BookInterest.find({bookId , interestedById}) ; 
             if(duplicateRequest.length > 0){ throw new Error("You have already shown interest in this book") }
             const bookInterest = new BookInterest({
-                bookId , status , interestedById , initialMessage
+                bookId , status , interestedById , initialMessage , uploadedById
             }) ; 
             const data = await bookInterest.save() ; 
             return res.status(200).json({isSuccess: true , data}) ; 
@@ -155,42 +159,14 @@ bookInterestRouter.get("/bookInterest/interestsReceived/:status" , userAuth , as
     try{
         const {status} = req.params ; 
        const bookInterestsReceived = await BookInterest.aggregate(
-        [
-            {
-              $lookup: {
-                from: "books" , 
-                localField: "bookId" , 
-                foreignField: "_id" , 
-                as: "bookInterestReceived"
-              }
-            },
-            {
-              $lookup: {
-                 from: "users" , 
-                localField: "interestedById" , 
-                foreignField: "_id" , 
-                as: "interestedPerson"
-              }
-              
-            },
-            {
-                $match: {
-                    "bookInterestReceived.uploadedById": req.user._id , 
-                    "status": status
-                }
-            },
-           {
-              $addFields: {
-                "bookInterestReceived": {
-                  "$arrayElemAt": ["$bookInterestReceived" , 0]
-                } , 
-                "interestedPerson": {
-                   "$arrayElemAt": ["$interestedPerson" , 0]
-                }
-              }
-            }
-          
-          ]
+       [ 
+        {
+        $match: {
+            status: status , 
+            uploadedById: req.user._id
+        }
+        } , 
+    ]
     ) ; 
     return res.status(200).json({isSuccess: true , data: bookInterestsReceived}) ; 
     } catch(Error){
@@ -230,45 +206,98 @@ bookInterestRouter.get("/bookInterest/acceptedPeople" , userAuth , async (req , 
         const acceptedRequests = await BookInterest.aggregate([
             {
                 $match: {
-                    status : "ongoing" , 
-                }
-            } , 
-            {
-                $lookup: {
-                    from : "books" , 
-                    localField: "bookId" , 
-                    foreignField: "_id",
-                    as: "bookDocument" , 
-                }
-            } , 
-            { $unwind: "$bookDocument" },
-            {
-                $lookup: {
-                    from: "users" , 
-                    localField: "interestedById", 
-                    foreignField: "_id" , 
-                    as: "interestedPerson" , 
-                }
-            } , 
-            { $unwind: "$interestedPerson" },
-            {
-                $match: {
+                    status: "ongoing", 
                     $or: [
-                        {  "interestedPerson._id" : req.user._id } , 
-                        {  "bookDocument.uploadedById" : req.user._id}
-
+                        {"interestedById": req.user._id} , 
+                        {"uploadedById": req.user._id} , 
                     ]
                 }
+            } , 
+            {
+                $lookup: {
+                    from: "users", 
+                    localField: "interestedById", 
+                    foreignField: "_id",
+                    as: "interestedPersonDetails"
+                }
+            } , { $unwind: "$interestedPersonDetails" },
+            {
+                $lookup: {
+                    from: "users", 
+                    localField: "uploadedById", 
+                    foreignField: "_id",
+                    as: "interestReceiverDetails"
+                }
+            } , { $unwind: "$interestReceiverDetails" } , 
+            {
+                $project: {
+                    _id: 1,
+                    interestedById: 1,
+                    bookId: 1,
+                    uploadedById: 1,
+                    status: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    // Keep only the other user's details
+                    interestedPersonDetails: {
+                        $cond: {
+                            if: { $eq: ["$interestedPersonDetails._id", req.user._id] },
+                            then: "$$REMOVE", // Remove if matches req.user._id
+                            else: "$interestedPersonDetails"
+                        }
+                    },
+                    interestReceiverDetails: {
+                        $cond: {
+                            if: { $eq: ["$interestReceiverDetails._id", req.user._id] },
+                            then: "$$REMOVE", // Remove if matches req.user._id
+                            else: "$interestReceiverDetails"
+                        }
+                    }
+                }
             }
-            // {
-            //     $match: {
-            //         $or: [
-            //             {"interestedPerson._id": req.user._id} , 
-            //             {"bookInterest.uploadedById": req.user._id} 
-            //         ]
-            //     }
-            // }
         ]) ; 
+        // const acceptedRequests = await BookInterest.aggregate([
+        //     {
+        //         $match: {
+        //             status : "ongoing" , 
+        //         }
+        //     } , 
+        //     {
+        //         $lookup: {
+        //             from : "books" , 
+        //             localField: "bookId" , 
+        //             foreignField: "_id",
+        //             as: "bookDocument" , 
+        //         }
+        //     } , 
+        //     { $unwind: "$bookDocument" },
+        //     {
+        //         $lookup: {
+        //             from: "users" , 
+        //             localField: "interestedById", 
+        //             foreignField: "_id" , 
+        //             as: "interestedPerson" , 
+        //         }
+        //     } , 
+        //     { $unwind: "$interestedPerson" },
+        //     {
+        //         $match: {
+        //             $or: [
+        //                 {  "interestedPerson._id" : req.user._id } , 
+        //                 {  "bookDocument.uploadedById" : req.user._id}
+
+        //             ]
+        //         }
+        //     }
+        //     // {
+        //     //     $match: {
+        //     //         $or: [
+        //     //             {"interestedPerson._id": req.user._id} , 
+        //     //             {"bookInterest.uploadedById": req.user._id} 
+        //     //         ]
+        //     //     }
+        //     // }
+        // ]) ; 
         // const acceptedRequests = await BookInterest.aggregate([
         //     {
         //         $lookup: {
