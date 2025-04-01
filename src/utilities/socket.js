@@ -10,18 +10,21 @@ const initializeSocket = (server) => {
     }) ;    
 
     io.on("connection" , (socket) => {
-        socket.on("joinChat" , ({  userId , targetUserId}) => {
+        socket.on("joinChat" , ({  userId , targetUserId , firstName}) => {
             const roomId = [userId , targetUserId].sort().join('_') ; 
-            console.log(targetUserId , userId) ; 
+            console.log(targetUserId , userId , firstName + " joined " ,roomId) ; 
             socket.join(roomId) ;
         }) ; 
 
-        socket.on("sendMessage" , ( {name , userId , targetUserId , newMessage} ) => {
+        socket.on("sendMessage" , ( {firstName , userId , targetUserId , newMessage} ) => {
+            // console.log("send message event name: ",name , " + userId: " , userId , " + targetUserId: " , targetUserId , " newMessage: + " , newMessage ) ; 
             const roomId = [userId , targetUserId].sort().join('_') ; 
-            io.to(roomId).emit("messageReceived" , {name , newMessage}) ; 
+            console.log(firstName + " says ", newMessage);
+            
+            io.to(roomId).emit("messageReceived" , {firstName , newMessage}) ; 
         }  ) ; 
 
-        socket.on("sendMessage" , () => {}) ; 
+        socket.on("sendMessage1" , () => {}) ; 
 
         socket.on("disconnect" , () => {}) ; 
     })

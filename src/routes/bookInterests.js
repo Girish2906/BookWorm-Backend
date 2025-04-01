@@ -218,41 +218,28 @@ bookInterestRouter.get("/bookInterest/acceptedPeople" , userAuth , async (req , 
                     from: "users", 
                     localField: "interestedById", 
                     foreignField: "_id",
-                    as: "interestedPersonDetails"
+                    as: "interestedBy"
                 }
-            } , { $unwind: "$interestedPersonDetails" },
+            } , { $unwind: "$interestedBy" },
             {
                 $lookup: {
                     from: "users", 
                     localField: "uploadedById", 
                     foreignField: "_id",
-                    as: "interestReceiverDetails"
+                    as: "uploadedBy"
                 }
-            } , { $unwind: "$interestReceiverDetails" } , 
+            } , { $unwind: "$uploadedBy" } , 
             {
                 $project: {
-                    _id: 1,
-                    interestedById: 1,
-                    bookId: 1,
-                    uploadedById: 1,
-                    status: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    // Keep only the other user's details
-                    interestedPersonDetails: {
-                        $cond: {
-                            if: { $eq: ["$interestedPersonDetails._id", req.user._id] },
-                            then: "$$REMOVE", // Remove if matches req.user._id
-                            else: "$interestedPersonDetails"
+                    chatPerson: {
+                        $cond: { 
+                            if: { $eq: ["$interestedBy._id", req.user._id] }, 
+                            then: "$uploadedBy",   // If `interestedBy._id === req.user._id`, keep `uploadedBy`
+                            else: "$interestedBy"  // Otherwise, keep `interestedBy`
                         }
                     },
-                    interestReceiverDetails: {
-                        $cond: {
-                            if: { $eq: ["$interestReceiverDetails._id", req.user._id] },
-                            then: "$$REMOVE", // Remove if matches req.user._id
-                            else: "$interestReceiverDetails"
-                        }
-                    }
+                    status: 1,  
+                    bookId: 1
                 }
             }
         ]) ; 
