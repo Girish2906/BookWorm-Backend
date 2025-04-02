@@ -16,12 +16,12 @@ const initializeSocket = (server) => {
             socket.join(roomId) ;
         }) ; 
 
-        socket.on("sendMessage" , ( {firstName , userId , targetUserId , newMessage} ) => {
+        socket.on("sendMessage" , ( {firstName , userId , targetUserId , newMessage , _id} ) => {
             // console.log("send message event name: ",name , " + userId: " , userId , " + targetUserId: " , targetUserId , " newMessage: + " , newMessage ) ; 
             const roomId = [userId , targetUserId].sort().join('_') ; 
             console.log(firstName + " says ", newMessage);
             
-            io.to(roomId).emit("messageReceived" , {firstName , newMessage}) ; 
+            io.to(roomId).emit("messageReceived" , {firstName , newMessage , _id}) ; 
         }  ) ; 
 
         socket.on("sendMessage1" , () => {}) ; 
