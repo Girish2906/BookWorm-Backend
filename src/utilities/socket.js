@@ -1,5 +1,5 @@
 const socket = require("socket.io") ; 
-
+const Chat = require("../database/Chat") ; 
 
 const initializeSocket = (server) => {
     
@@ -16,12 +16,29 @@ const initializeSocket = (server) => {
             socket.join(roomId) ;
         }) ; 
 
-        socket.on("sendMessage" , ( {firstName , userId , targetUserId , newMessage , _id} ) => {
+        socket.on("sendMessage" , async ( {firstName , userId , targetUserId , newMessage , _id} ) => {
             // console.log("send message event name: ",name , " + userId: " , userId , " + targetUserId: " , targetUserId , " newMessage: + " , newMessage ) ; 
             const roomId = [userId , targetUserId].sort().join('_') ; 
-            console.log(firstName + " says ", newMessage);
+            console.log(firstName + " says ", newMessage) ; 
+            try{
+                let chat = await Chat.findOne({
+                    participants: { $all: [userId , targetUserId]  }
+                }) ; 
+                if(!chat){
+                    chat = new Chat({
+                        participants: [userId , targetUserId] , 
+                        messages: [], 
+                    })
+                } chat.messages.push({
+                    senderId: userId , message: newMessage
+                })
+                const response = await chat.save() ; 
+                console.log("chatting response: " , response) ; 
+                io.to(roomId).emit("messageReceived" , {firstName , newMessage , _id}) ; 
+            } catch(Error){
+                console.log("Error is: " , Error.message) ; 
+            }
             
-            io.to(roomId).emit("messageReceived" , {firstName , newMessage , _id}) ; 
         }  ) ; 
 
         socket.on("sendMessage1" , () => {}) ; 

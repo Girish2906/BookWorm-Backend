@@ -7,6 +7,7 @@ require('dotenv').config({ path: './src/.env' });
 const authRouter = require("./routes/auth") ; 
 const bookRouter = require("./routes/book") ; 
 const bookInterestRouter = require("./routes/bookInterests") ; 
+const chatRouter = require("./routes/chat") ; 
 const http = require("http") ; 
 const cors = require("cors") ; 
 const initializeSocket = require("./utilities/socket") ;
@@ -21,6 +22,7 @@ app.use(express.json()) ;
 app.use("/" , authRouter) ; 
 app.use("/" , bookRouter) ; 
 app.use("/" , bookInterestRouter) ; 
+app.use("/" , chatRouter) ; 
 
 const server = http.createServer(app) ; 
 initializeSocket(server) ;
