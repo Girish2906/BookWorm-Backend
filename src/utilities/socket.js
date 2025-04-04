@@ -16,8 +16,8 @@ const initializeSocket = (server) => {
             socket.join(roomId) ;
         }) ; 
 
-        socket.on("sendMessage" , async ( {firstName , userId , targetUserId , newMessage , _id} ) => {
-            // console.log("send message event name: ",name , " + userId: " , userId , " + targetUserId: " , targetUserId , " newMessage: + " , newMessage ) ; 
+        socket.on("sendMessage" , async ( {firstName , lastName , userId , targetUserId , newMessage , _id} ) => {
+            console.log("send message event name: ",firstName , " + userId: " , userId , " + targetUserId: " , targetUserId , " newMessage: + " , newMessage ) ; 
             const roomId = [userId , targetUserId].sort().join('_') ; 
             console.log(firstName + " says ", newMessage) ; 
             try{
@@ -28,13 +28,14 @@ const initializeSocket = (server) => {
                     chat = new Chat({
                         participants: [userId , targetUserId] , 
                         messages: [], 
-                    })
+                    }) ; 
                 } chat.messages.push({
                     senderId: userId , message: newMessage
-                })
+                }) ; 
                 const response = await chat.save() ; 
-                console.log("chatting response: " , response) ; 
-                io.to(roomId).emit("messageReceived" , {firstName , newMessage , _id}) ; 
+                // console.log("chatting response: " , response) ; 
+                console.log("object that we are sending 37 " , firstName , newMessage , _id)
+                io.to(roomId).emit("messageReceived" , {firstName , lastName , newMessage , _id}) ; 
             } catch(Error){
                 console.log("Error is: " , Error.message) ; 
             }

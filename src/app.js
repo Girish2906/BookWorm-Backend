@@ -13,7 +13,7 @@ const cors = require("cors") ;
 const initializeSocket = require("./utilities/socket") ;
 const upload = multer({ dest: 'uploads/' }) ; 
 app.use(cors({
-    origin: "http://localhost:5173" , 
+    origin: ["http://localhost:5173" , "https://book-worm-frontend.vercel.app/"] , 
     credentials: true
 })) ; 
 app.use(express.urlencoded({ extended: false })) ;
