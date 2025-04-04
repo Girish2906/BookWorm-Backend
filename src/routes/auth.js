@@ -65,7 +65,14 @@ authRouter.post("/login" , async (req , res) => {
             expiresIn: "1d"
         }) ; 
         console.log(token) ; 
-        res.cookie("token" , token) ; 
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,         // required for HTTPS (Render is HTTPS)
+            sameSite: "None",     // required for cross-origin cookies
+            path: "/",            // optional but recommended
+        });
+
+        // res.cookie("token" , token) ; 
         
         return res.status(200).json({isSuccess: true , data: user}) ;
     } catch(error){
