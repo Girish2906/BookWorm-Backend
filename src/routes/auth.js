@@ -61,7 +61,7 @@ authRouter.post("/login" , async (req , res) => {
         if(!passwordCompare){
             throw new Error("Password is incorrect") ; 
         }
-        const token = await jwt.sign({_id: user._id} , process.env.JWT_SECRET , {
+        const token =  jwt.sign({_id: user._id} , process.env.JWT_SECRET , {
             expiresIn: "1d"
         }) ; 
         console.log(token) ; 
@@ -95,9 +95,17 @@ authRouter.get("/profile" , userAuth , async (req , res) => {
 
 authRouter.post('/logout' , async (req , res) => {
     console.log("These are the cookies: ",req?.cookies) ; 
-    res.cookie("token" , null , {
-        expires: new Date(Date.now()) 
-    }) ; 
+    res.cookie("token", "", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+        path: "/",               // match the original cookie path
+        expires: new Date(0),    // expire immediately
+      });
+      
+    // res.cookie("token" , null , {
+    //     expires: new Date(Date.now()) 
+    // }) ; 
     return res.status(200).json({isSuccess: true , message: "User Logged Out"}) ; 
 }) ; 
 
