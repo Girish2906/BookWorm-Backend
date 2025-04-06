@@ -161,11 +161,33 @@ bookInterestRouter.get("/bookInterest/interestsReceived/:status" , userAuth , as
        const bookInterestsReceived = await BookInterest.aggregate(
        [ 
         {
-        $match: {
-            status: status , 
-            uploadedById: req.user._id
-        }
+            $match: {
+                status: status , 
+                uploadedById: req.user._id
+            }
         } , 
+        {
+            $lookup: {
+                from: "users" , 
+                localField : "interestedById" , 
+                foreignField: "_id" , 
+                as: "interestedPerson",
+            }
+        } , 
+        {
+            $unwind: "$interestedPerson"
+        } , 
+        {
+            $lookup: {
+                from: "books" , 
+                localField : "bookId" , 
+                foreignField: "_id" , 
+                as: "interestedBook",
+            }
+        } , 
+        {
+            $unwind: "$interestedBook"
+        }
     ]
     ) ; 
     return res.status(200).json({isSuccess: true , data: bookInterestsReceived}) ; 

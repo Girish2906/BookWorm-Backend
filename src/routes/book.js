@@ -23,9 +23,9 @@ const s3 = new S3Client({
     region: bucketLocation
 })
 
-const Redis = require("ioredis") ; 
-const redis = new  Redis(process.env.UPSTASH_REDIS_URL) ; 
-// const redisForLocalWhenRunningOnDocker = new Redis({
+// const Redis = require("ioredis") ; 
+// const redis = new  Redis(process.env.UPSTASH_REDIS_URL) ; 
+// const redis = new Redis({
 //     host: "127.0.0.1",
 //     port: 6379, 
 //   });
@@ -155,29 +155,29 @@ bookRouter.get("/book/getAllBooks", userAuthBooks , async (req , res) => {
     try{
         let books = [] ; 
         if( ! req.user){
-            const cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
-            if(!cachedBooks){
-                console.log("cache not found") ; 
+            // const cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
+            // if(!cachedBooks){
+            //     console.log("cache not found") ; 
                 books = await Book.find({}).populate("uploadedById" , "firstName lastName")
-                await redis.set("listOfBooks", JSON.stringify(books) , "EX", 60);
-            }
-            else {
-                books = cachedBooks ; 
-            }
+            //     await redis.set("listOfBooks", JSON.stringify(books) , "EX", 60);
+            // }
+            // else {
+            //     books = cachedBooks ; 
+            // }
         } else{
             console.log("user is logged in, so the else condition , 171") ; 
             const _id= req.user._id ;
-            let cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
-            if(cachedBooks){
-                books = cachedBooks ; 
-            }
-            else{
-                cachedBooks = [] ; 
-                const info = await redis.info() ;  
+            // let cachedBooks = JSON.parse(await redis.get("listOfBooks")) ; 
+            // if(cachedBooks){
+            //     books = cachedBooks ; 
+            // }
+            // else{
+            //     cachedBooks = [] ; 
+            //     const info = await redis.info() ;  
                 books = await Book.find({uploadedById: {$ne: _id }}).populate("uploadedById" , "firstName lastName") ; 
-                await redis.set("listOfBooks", JSON.stringify(books));
-                books.forEach(book => redis.hset("books", book._id, JSON.stringify(book)));
-            } 
+                // await redis.set("listOfBooks", JSON.stringify(books), "EX", 60); 
+            //     books.forEach(book => redis.hset("books", book._id, JSON.stringify(book)));
+            // } 
         }
         return res.status(200).json({isSuccess: true , data: books}) ; 
     } catch(Error){
@@ -200,3 +200,4 @@ bookRouter.get("/book/booksByMe" , userAuth , async (req , res) => {
 // beginning redis journey
 // doing some setup => WSL, docker, redis
 module.exports = bookRouter ; 
+// made my resume
